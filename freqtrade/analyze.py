@@ -91,6 +91,15 @@ class Analyze(object):
         """
         return self.strategy.advise_sell(dataframe=dataframe, pair=pair)
 
+    def pre_trade_mgt(self, dataframe: DataFrame, pair: str) -> DataFrame:
+        """
+        Based on populate_buy_trend and populate_sell_trend asserts optional
+        pre trade management def from strategy that may alter or cancel trade detail
+        :param dataframe: DataFrame
+        :return: DataFrame with buy column
+        """
+        return self.strategy.pre_trade_mgt(dataframe=dataframe, pair=pair)
+
     def get_ticker_interval(self) -> str:
         """
         Return ticker interval to use
@@ -105,7 +114,7 @@ class Analyze(object):
         """
         return self.strategy.stoploss
 
-    def analyze_ticker(self, ticker_history: List[Dict]) -> DataFrame:
+    def analyze_ticker(self, ticker_history: List[Dict], pair: str) -> DataFrame:
         """
         Parses the given ticker history and returns a populated DataFrame
         add several TA indicators and buy signal to it
@@ -116,6 +125,11 @@ class Analyze(object):
         dataframe = self.populate_indicators(dataframe, pair)
         dataframe = self.populate_buy_trend(dataframe, pair)
         dataframe = self.populate_sell_trend(dataframe, pair)
+
+        ## Include optional 'pre_trade_mgt' if in strategy.
+        if hasattr(self.strategy, 'pre_trade_mgt'):
+            dataframe = self.pre_trade_mgt(dataframe, pair)
+
         return dataframe
 
     def get_signal(self, exchange: Exchange, pair: str, interval: str) -> Tuple[bool, bool]:
@@ -156,7 +170,7 @@ class Analyze(object):
         # Check if dataframe is out of date
         signal_date = arrow.get(latest['date'])
         interval_minutes = constants.TICKER_INTERVAL_MINUTES[interval]
-        if signal_date < (arrow.utcnow() - timedelta(minutes=(interval_minutes + 5))):
+        if signal_date < (arrow.utcnow() - timedelta(minutes=(interval_minutes * 2 + 5))):
             logger.warning(
                 'Outdated history for pair %s. Last tick is %s minutes old',
                 pair,
