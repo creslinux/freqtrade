@@ -6,13 +6,13 @@ import logging
 import os
 from typing import Optional, List, Dict, Tuple, Any
 import arrow
+import ujson
 
 from freqtrade import misc, constants, OperationalException
 from freqtrade.exchange import Exchange
 from freqtrade.arguments import TimeRange
 
 logger = logging.getLogger(__name__)
-
 
 def trim_tickerlist(tickerlist: List[Dict], timerange: TimeRange) -> List[Dict]:
     if not tickerlist:
@@ -44,7 +44,7 @@ def trim_tickerlist(tickerlist: List[Dict], timerange: TimeRange) -> List[Dict]:
 
     return tickerlist[start_index:stop_index]
 
-
+@profile
 def load_tickerdata_file(
         datadir: str, pair: str,
         ticker_interval: str,
@@ -67,7 +67,7 @@ def load_tickerdata_file(
     elif os.path.isfile(file):
         logger.debug('Loading ticker data from file %s', file)
         with open(file) as tickerdata:
-            pairdata = json.load(tickerdata)
+            pairdata = ujson.load(tickerdata)
     else:
         return None
 
@@ -163,7 +163,7 @@ def load_cached_data_for_updating(filename: str,
     # read the cached file
     if os.path.isfile(filename):
         with open(filename, "rt") as file:
-            data = json.load(file)
+            data = ujson.load(file)
             # remove the last item, because we are not sure if it is correct
             # it could be fetched when the candle was incompleted
             if data:
