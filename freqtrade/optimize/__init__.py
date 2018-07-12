@@ -44,7 +44,6 @@ def trim_tickerlist(tickerlist: List[Dict], timerange: TimeRange) -> List[Dict]:
 
     return tickerlist[start_index:stop_index]
 
-@profile
 def load_tickerdata_file(
         datadir: str, pair: str,
         ticker_interval: str,
